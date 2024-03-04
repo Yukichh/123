@@ -91,13 +91,13 @@ $button7.ForeColor = "White"
 $button7.BackColor = "Gray"
 $button7.Add_Click({
     $localUser = $textBox3.Text
-    $localPassword = $textBox4.Text
-    New-LocalUser -Name $localUser -Password $localPassword -NoPasswordExpiration
+    $localPassword = ConvertTo-SecureString $textBox4.Text -AsPlainText -Force
+    New-LocalUser -Name $localUser -Password $localPassword
     [System.Windows.Forms.MessageBox]::Show("New user created")
 })
 
 $button2 = New-Object System.Windows.Forms.Button
-$button2.Text = "Test"
+$button2.Text = "Hardware Info"
 $button2.Location = New-Object System.Drawing.Point($buttonLeft,90)
 $button2.Size = New-Object System.Drawing.Size(95,23)
 $button2.ForeColor = "White"
@@ -106,7 +106,7 @@ $button2.Add_Click({
     $cpuInfo1 = Get-CimInstance -ClassName Win32_Processor | Select-Object Name, NumberOfCores | Out-String
     $cpuInfo2 = Get-CimInstance -ClassName Win32_Processor | Select-Object Manufacturer | Out-String
     $motherboardInfo = Get-CimInstance -ClassName Win32_BaseBoard | Select-Object Manufacturer, Product | Out-String
-    $gpuInfo = Get-CimInstance -ClassName Win32_VideoController | Select-Object Name, @{Name="AdapterRAM (GB)"; Expression={[math]::Round($_.AdapterRAM / 1GB)}} | Out-String
+    $gpuInfo = Get-CimInstance -ClassName Win32_VideoController | Select-Object Name | Out-String
     $ramInfo = Get-CimInstance -ClassName Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum | Select-Object @{Name="TotalRAM(GB)"; Expression={[math]::Round($_.Sum / 1GB, 2)}} | Out-String
 
     $hardwareInfo = $cpuInfo1, $cpuInfo2, $motherboardInfo, $gpuInfo, $ramInfo
@@ -114,13 +114,28 @@ $button2.Add_Click({
 })
 
 $button3 = New-Object System.Windows.Forms.Button
-$button3.Text = "Status Service"
+$button3.Text = "Protect Privacy"
 $button3.Location = New-Object System.Drawing.Point($buttonLeft,120)
 $button3.Size = New-Object System.Drawing.Size(95,23)
 $button3.ForeColor = "White"
 $button3.BackColor = "Gray"
 $button3.Add_Click({
-    # Script
+    Get-ScheduledTask  XblGameSaveTaskLogon | Disable-ScheduledTask
+    Get-ScheduledTask  XblGameSaveTask | Disable-ScheduledTask
+    Get-ScheduledTask  Consolidator | Disable-ScheduledTask
+    Get-ScheduledTask  UsbCeip | Disable-ScheduledTask
+    Get-ScheduledTask  DmClient | Disable-ScheduledTask
+    Get-ScheduledTask  DmClientOnScenarioDownload | Disable-ScheduledTask
+    
+    Stop-Service "dmwappushservice"
+    Set-Service "dmwappushservice" -StartupType Disabled
+
+    Stop-Service "DiagTrack"
+    Set-Service "DiagTrack" -StartupType Disabled
+    [System.Windows.Forms.MessageBox]::Show("
+    Disabling scheduled tasks. 
+    Stopping and disabling WAP Push Service. 
+    Stopping and disabling Diagnostics Tracking Service.")
 })
 
 $button4 = New-Object System.Windows.Forms.Button
